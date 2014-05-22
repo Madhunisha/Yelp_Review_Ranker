@@ -37,20 +37,21 @@ class YelpReview:
                 ind = json.loads(line)
                 self.data_review.append(ind)
                 cnt += 1
-                if cnt > 2000:
+                if cnt > 100000:
                     break
         with open(userFile) as f:
             for line in f:
                 ind = json.loads(line)
+                ind["status"] = "old"
                 self.data_user[ind['user_id']] = ind
         with open(businessFile) as f:
             for line in f:
                 ind = json.loads(line)
                 self.data_business[ind['business_id']] = ind
-        with open(businessFile) as f:
+        with open(checkinFile) as f:
             for line in f:
                 ind = json.loads(line)
-                self.data_business[ind['business_id']] = ind
+                self.data_checkin[ind['business_id']] = ind
 
     def BusinessFeatures(self,id):
         business = self.data_business[id]
@@ -58,9 +59,9 @@ class YelpReview:
 
 
     def UserFeatures(self,id):
-
         userFeat = [0,0,0,0,0,0]
         if(self.data_user.has_key(id)== False):
+            print "mismatch"
             return userFeat
         user = self.data_user[id]
         userFeat=[]
@@ -84,21 +85,58 @@ class YelpReview:
             cnt = cnt +1
         return matrix,target
 
-    
+
+    def Preprocess(self):
+        user = {"status": "new", "votes": {"funny": 0, "useful": 0, "cool": 0}, "user_id": " ", "name": "Unknown", "average_stars": 0.0, "review_count": 1, "type": "user"}
+        count = 0
+        for review in self.data_review:
+            userID = review['user_id']
+            if(self.data_user.has_key(userID)):
+                user = self.data_user[userID]
+                if(user['status'] == 'new'):
+                    user['votes']['funny'] = user['votes']['funny'] + review['votes']['funny']
+                    user['votes']['useful'] = user['votes']['useful'] + review['votes']['useful']
+                    user['votes']['cool'] = user['votes']['cool'] + review['votes']['cool']
+                    user['average_stars'] = (user['average_stars'] * user['review_count'] + review['stars'])/(user['review_count'] + 1)
+                    user['review_count'] = user['review_count'] + 1
+                    self.data_user[userID] = user
+                    count = count + 1
+                    # print userID
+            else:
+                count = count + 1
+                user['user_id'] = userID
+                user['name'] = "Unknown"
+                user['status'] = 'new'
+                user['votes']['funny'] = review['votes']['funny']
+                user['votes']['useful'] = review['votes']['useful']
+                user['votes']['cool'] = review['votes']['cool']
+                user['average_stars'] = review['stars']
+                user['review_count'] = 1
+                self.data_user[userID] = user
+        return count
 
 def main():
     totalData = YelpReview()
     totalData.initialize('yelp_training_set_review.json','yelp_training_set_user.json','yelp_training_set_business.json','yelp_training_set_checkin.json')
-    print totalData.data_review[20]
+    # count = totalData.DataOverlap('yelp_test_set_review.json')
+    # print "count :" + str(count)
+    count = totalData.Preprocess()
+    print "count :" + str(count)
     matrix , tar = totalData.PopulateMatrix()
     print "population done"
     reg = svm.SVR(kernel = 'rbf')
-    reg.fit(matrix[:1700],tar[:1700])
-    print "classifier modeled"
-    for x in xrange(1600,1900):
-        predictions = reg.predict([matrix[x]])
-        print "value :" + str(totalData.data_review[x]['votes']['useful']) + '|' + 'prediction :' + str(round(predictions))
-        print "------------------------------------"
+    reg.fit(matrix[:99000],tar[:99000])
+    # print "classifier modeled"
+    predictions = []
+    for x in xrange(99100,99200):
+         predictions.append(round(reg.predict([matrix[x]])))
+         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-99100])
+         print "------------------------------------"
+    count =0
+    for i in xrange(100):
+        if( predictions[i] == (tar[99100+i])):
+            count = count + 1
 
+    print "percentage acc :" + str(float(count/100.00))
 
 main()
