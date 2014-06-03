@@ -4,7 +4,8 @@ __author__ = 'Nikhil'
 
 import json
 import numpy
-from sklearn import svm
+from sklearn.svm import NuSVR
+#from sklearn import svm
 
 
 # data_user = {}
@@ -37,8 +38,8 @@ class YelpReview:
                 ind = json.loads(line)
                 self.data_review.append(ind)
                 cnt += 1
-                if cnt > 100000:
-                    break
+                # if cnt > 100000:
+                #     break
         with open(userFile) as f:
             for line in f:
                 ind = json.loads(line)
@@ -100,7 +101,7 @@ class YelpReview:
                     user['average_stars'] = (user['average_stars'] * user['review_count'] + review['stars'])/(user['review_count'] + 1)
                     user['review_count'] = user['review_count'] + 1
                     self.data_user[userID] = user
-                    count = count + 1
+                    # count = count + 1
                     # print userID
             else:
                 count = count + 1
@@ -117,26 +118,67 @@ class YelpReview:
 
 def main():
     totalData = YelpReview()
-    totalData.initialize('yelp_training_set_review.json','yelp_training_set_user.json','yelp_training_set_business.json','yelp_training_set_checkin.json')
+    add = 'C:\Users\Nikhil\Documents\social_train'
+    totalData.initialize(add+'\yelp_training_set_review.json',add+'\yelp_training_set_user.json',add+'\yelp_training_set_business.json',add+'\yelp_training_set_checkin.json')
     # count = totalData.DataOverlap('yelp_test_set_review.json')
     # print "count :" + str(count)
     count = totalData.Preprocess()
     print "count :" + str(count)
     matrix , tar = totalData.PopulateMatrix()
+
     print "population done"
-    reg = svm.SVR(kernel = 'rbf')
-    reg.fit(matrix[:99000],tar[:99000])
+    print "matrix size" + str(len(tar))
+    reg = NuSVR(kernel = 'poly', verbose= True)
+    print "start fit"
+    reg.fit(matrix[:22000],tar[:22000])
     # print "classifier modeled"
     predictions = []
-    for x in xrange(99100,99200):
+    for x in xrange(229100,229200):
          predictions.append(round(reg.predict([matrix[x]])))
-         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-99100])
+         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-229100])
          print "------------------------------------"
     count =0
     for i in xrange(100):
-        if( predictions[i] == (tar[99100+i])):
+        if((predictions[i] >= tar[9100+i] and predictions[i] <= (tar[9100+i]) + 0.5 * (tar[9100+i])) or (predictions[i] <= tar[9100+i] and predictions[i] >= 0.5 * (tar[9100+i]))):
             count = count + 1
 
     print "percentage acc :" + str(float(count/100.00))
+
+    predictions = []
+    for x in xrange(8900,9000):
+         predictions.append(round(reg.predict([matrix[x]])))
+         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-8900])
+         print "------------------------------------"
+    count =0
+    for i in xrange(100):
+        if((predictions[i] >= tar[8900+i] and predictions[i] <= (tar[8900+i]) + 0.5 * (tar[8900+i])) or (predictions[i] <= tar[8900+i] and predictions[i] >= 0.5 * (tar[8900+i]))):
+            count = count + 1
+
+    print "percentage acc train:" + str(float(count/100.00))
+
+    predictions = []
+    for x in xrange(9100,9200):
+         predictions.append(round(reg.predict([matrix[x]])))
+         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-9100])
+         print "------------------------------------"
+    count =0
+    for i in xrange(100):
+        if(predictions[i] == tar[9100+i]):
+            count = count + 1
+
+    print "percentage acc :" + str(float(count/100.00))
+
+    predictions = []
+    for x in xrange(229000,229100):
+         predictions.append(round(reg.predict([matrix[x]])))
+         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-229000])
+         print "------------------------------------"
+    count =0
+    for i in xrange(100):
+        if(predictions[i] == tar[229000+i]):
+            count = count + 1
+    print "percentage acc train:" + str(float(count/100.00))
+
+
 
 main()
