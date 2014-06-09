@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../../../AI/PS3/PS3-Nikhil-Ambha-Madhusudhana/.idea/PS3-Nikhil-Ambha-Madhusudhana.iml" filepath="$PROJECT_DIR$/../../../AI/PS3/PS3-Nikhil-Ambha-Madhusudhana/.idea/PS3-Nikhil-Ambha-Madhusudhana.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/yelp_review_ranker.iml" filepath="$PROJECT_DIR$/.idea/yelp_review_ranker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/YELP_REG.iml" filepath="$PROJECT_DIR$/.idea/YELP_REG.iml" />
     </modules>
   </component>
 </project>

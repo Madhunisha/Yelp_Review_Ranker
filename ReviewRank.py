@@ -4,9 +4,9 @@ __author__ = 'Nikhil'
 
 import json
 import numpy
-from sklearn.svm import NuSVR
-#from sklearn import svm
-
+from sklearn.preprocessing import normalize
+from sklearn.svm import LinearSVC
+from sklearn import linear_model
 
 # data_user = {}
 # data_review = []
@@ -72,8 +72,13 @@ class YelpReview:
         userFeat.append(user['votes']['useful'])
         userFeat.append(user['votes']['funny'])
         userFeat.append(user['votes']['cool'])
-        userFeat.append(float(userFeat[2]/userFeat[0]))
+        userFeat.append(userFeat[2]/float(userFeat[0]))
         return userFeat
+
+    def ReviewFeatures(self,review):
+        reviewFeat = [0,0,0]
+
+
 
     def PopulateMatrix(self):
         matrix = numpy.zeros((len(self.data_review),9))
@@ -85,6 +90,7 @@ class YelpReview:
             target[cnt] = review['votes']['useful']
             cnt = cnt +1
         return matrix,target
+
 
 
     def Preprocess(self):
@@ -116,7 +122,7 @@ class YelpReview:
                 self.data_user[userID] = user
         return count
 
-def main():
+def maine():
     totalData = YelpReview()
     add = 'C:\Users\Nikhil\Documents\social_train'
     totalData.initialize(add+'\yelp_training_set_review.json',add+'\yelp_training_set_user.json',add+'\yelp_training_set_business.json',add+'\yelp_training_set_checkin.json')
@@ -125,28 +131,38 @@ def main():
     count = totalData.Preprocess()
     print "count :" + str(count)
     matrix , tar = totalData.PopulateMatrix()
+    X_train = normalize(matrix,norm='l1',axis=0)
 
+    # X_train = min_max_scaler.fit_transform(matrix)
     print "population done"
     print "matrix size" + str(len(tar))
-    reg = NuSVR(kernel = 'poly', verbose= True)
-    print "start fit"
-    reg.fit(matrix[:22000],tar[:22000])
-    # print "classifier modeled"
-    predictions = []
-    for x in xrange(229100,229200):
-         predictions.append(round(reg.predict([matrix[x]])))
-         print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-229100])
-         print "------------------------------------"
-    count =0
-    for i in xrange(100):
-        if((predictions[i] >= tar[9100+i] and predictions[i] <= (tar[9100+i]) + 0.5 * (tar[9100+i])) or (predictions[i] <= tar[9100+i] and predictions[i] >= 0.5 * (tar[9100+i]))):
-            count = count + 1
+    # reg = SVR(kernel = 'poly', verbose= True)
 
-    print "percentage acc :" + str(float(count/100.00))
+    X_new = LinearSVC(C=0.01, penalty="l1", dual=False).fit_transform(matrix[:200000], tar[:200000])
+
+    print "New feature" + str(X_new.shape) + "----" + str(X_new[0][:])
+    print "old feature" + str(matrix.shape) + "----" + str(matrix[0][:])
+    i = input("find features")
+
+    reg = linear_model.SGDRegressor(loss='huber',learning_rate='constant')
+    print "start fit"
+    reg.fit(X_train[:220000],tar[:220000])
+    print "classifier modeled"
+    # predictions = []
+    # for x in xrange(229100,229200):
+    #      predictions.append(round(reg.predict([matrix[x]])))
+    #      print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-229100])
+    #      print "------------------------------------"
+    # count =0
+    # for i in xrange(100):
+    #     if((predictions[i] >= tar[9100+i] and predictions[i] <= (tar[9100+i]) + 0.5 * (tar[9100+i])) or (predictions[i] <= tar[9100+i] and predictions[i] >= 0.5 * (tar[9100+i]))):
+    #         count = count + 1
+    #
+    # print "percentage acc :" + str(float(count/100.00))
 
     predictions = []
     for x in xrange(8900,9000):
-         predictions.append(round(reg.predict([matrix[x]])))
+         predictions.append((reg.predict([matrix[x]])))
          print "value :" + str(tar[x]) + '|' + 'prediction :' + str(predictions[x-8900])
          print "------------------------------------"
     count =0
@@ -180,5 +196,19 @@ def main():
     print "percentage acc train:" + str(float(count/100.00))
 
 
+
+def main():
+    totalData = YelpReview()
+    add = 'C:\Users\Nikhil\Documents\social_train'
+    totalData.initialize(add+'\yelp_training_set_review.json',add+'\yelp_training_set_user.json',add+'\yelp_training_set_business.json',add+'\yelp_training_set_checkin.json')
+    # count = totalData.DataOverlap('yelp_test_set_review.json')
+
+    count = totalData.Preprocess()
+    print "count :" + str(count)
+    with open(add+'\data2.json', 'w') as outfile:
+        list = totalData.data_user.keys()
+        for ele in list:
+            json.dump(totalData.data_user.get(ele), outfile)
+            outfile.write('\n')
 
 main()
